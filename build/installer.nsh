@@ -2,7 +2,28 @@
 ; openbot:// scheme only on macOS and Linux, so the installer writes the Windows key itself.
 ; The application writes the same key at each start (`src/main/index.ts`).
 
+; A chosen folder such as D:\OpenBot inherits Modify rights for "Authenticated Users" from the drive
+; root, so another account could replace OpenBot.exe. Give access only to this user, SYSTEM and
+; Administrators, as %LOCALAPPDATA% does, and reset the files to inherit it. This runs at each
+; install and update, because an update deletes the folder. On a drive with no ACLs, such as
+; exFAT, icacls fails and the install continues.
+!macro openBotRestrictInstallDirectory
+  Push $0
+  Push $1
+  ReadEnvStr $0 USERDOMAIN
+  ReadEnvStr $1 USERNAME
+  nsExec::ExecToLog '"$SYSDIR\icacls.exe" "$INSTDIR" /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" "$0\$1:(OI)(CI)F" /Q'
+  Pop $0
+  ${if} $0 == 0
+    nsExec::ExecToLog '"$SYSDIR\icacls.exe" "$INSTDIR\*" /reset /T /C /Q'
+    Pop $0
+  ${endIf}
+  Pop $1
+  Pop $0
+!macroend
+
 !macro customInstall
+  !insertmacro openBotRestrictInstallDirectory
   WriteRegStr SHCTX "Software\Classes\openbot" "" "URL:OpenBot invitations"
   WriteRegStr SHCTX "Software\Classes\openbot" "URL Protocol" ""
   WriteRegStr SHCTX "Software\Classes\openbot\DefaultIcon" "" "$appExe,0"
