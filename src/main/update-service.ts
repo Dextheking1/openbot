@@ -573,8 +573,9 @@ export class UpdateService extends EventEmitter<UpdateServiceEvents> {
           if (this.#checkRequest) yield* Deferred.await(this.#checkRequest).pipe(Effect.catch(() => Effect.void));
           if (this.#installGeneration !== generation) return;
           this.#installHandedOver = true;
-          // Only the NSIS updater reads `isSilent`. The assisted Windows installer shows its install mode
-          // and finish pages when it runs visibly, and it reopens the app only when it runs silently.
+          // Silent, so the assisted Windows installer shows no page and opens the app again: it ignores
+          // the force-run flag in a visible run. Other updaters only relaunch, now from `true` and not
+          // from `autoRunAppAfterInstall`, which is also `true`.
           yield* updateSync(() => this.#updater.quitAndInstall(true, true));
           this.#armPhaseTimer();
         }),

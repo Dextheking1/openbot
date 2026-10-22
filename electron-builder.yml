@@ -138,11 +138,11 @@ win:
     - target: nsis
       arch:
         - x64
-# The assisted installer lets the user choose the disk and folder. "Just me" stays the default
-# mode. When the chosen path does not contain `OpenBot`, electron-builder adds an `OpenBot`
-# subfolder, so the uninstaller never removes a whole drive or a shared folder. An update reads
-# the folder from `InstallLocation`. The app starts it silently (`src/main/update-service.ts`), so
-# an update shows no page.
+# The assisted installer lets the user choose the disk and folder. `build/installer.nsh` keeps it
+# per-user and moves the install into an `OpenBot` subfolder when the chosen folder holds other
+# files, because the uninstaller deletes the whole folder. An update reads the folder from
+# `InstallLocation`. The app starts it silently (`src/main/update-service.ts`), so an update shows
+# no page.
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

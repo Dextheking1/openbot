@@ -647,8 +647,10 @@ Before creating the first tag or any later release:
     OpenBot closed and with it open, confirm that Open OpenBot on a `/join` page opens OpenBot and
     shows the invitation once, and that uninstall
     removes `HKCU\Software\Classes\openbot`. Update from the previous release, then install to a
-    folder on a second disk. Confirm that an update installs to the same folder, and that the
-    uninstaller removes only that folder;
+    folder on a second disk. Confirm that the installer has no "All users" page, that an update
+    installs to the same folder, and that the uninstaller removes only that folder. Choose
+    `%USERPROFILE%\OpenBot` with an agent workspace in it, and confirm that OpenBot installs to
+    `%USERPROFILE%\OpenBot\OpenBot` and that uninstall keeps the workspace;
 13. on Ubuntu 24.04 x64 with the AppArmor profile from `build/linux/openbot.apparmor` installed,
     confirm the AppImage starts with the sandbox on, that `xdg-open 'openbot://join?...'` focuses the
     running application, that a provider downloads in-app, that the page rail is drawn, and that the
