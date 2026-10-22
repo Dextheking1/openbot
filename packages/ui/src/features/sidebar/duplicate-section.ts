@@ -66,7 +66,13 @@ export async function duplicateSection(deps: SectionDuplicateDeps, sectionId: st
   );
   let layout = await deps.mutateLayout({ type: "create", name });
   if (!layout) return null;
-  const created = layout.sections.find((section) => section.name === name);
+  // The new section is the one this create added. Another client can add a section at the same time,
+  // so the name picks between new sections; the host may store the name in another form.
+  const before = new Set(deps.layout.sections.map((section) => section.id));
+  const added = layout.sections.filter((section) => !before.has(section.id));
+  const created =
+    added.find((section) => section.name.toLocaleLowerCase() === name.toLocaleLowerCase()) ??
+    (added.length === 1 ? added[0] : undefined);
   if (!created) throw new Error("The new sidebar section is missing.");
   for (const agentId of copied) {
     const copy = await deps.duplicateAgent(agentId);
@@ -79,8 +85,11 @@ export async function duplicateSection(deps: SectionDuplicateDeps, sectionId: st
     });
     if (!layout) return null;
   }
+  // A source that another client deleted meanwhile has no place to follow, so the copy stays last.
+  const sourceIndex = layout.order.indexOf(sectionId);
   const from = layout.order.indexOf(created.id);
-  const to = layout.order.indexOf(sectionId) + 1;
-  if (from > to) await deps.mutateLayout({ type: "move", sectionId: created.id, direction: "up", steps: from - to });
+  const to = sourceIndex + 1;
+  if (sourceIndex >= 0 && from > to)
+    await deps.mutateLayout({ type: "move", sectionId: created.id, direction: "up", steps: from - to });
   return created.id;
 }

@@ -1589,16 +1589,29 @@ export function createWebWorkspace(
           {
             layout: state.sidebarLayout,
             agentIds: state.agents.filter((agent) => !hidden.has(agent.id)).map((agent) => agent.id),
+            // The agent's own Duplicate item waits too: the host refuses a second copy of one agent.
             duplicateAgent: async (agentId) => {
-              const result = await runtime.duplicateAgent(agentId);
               if (!isCurrent()) return null;
               setState((draft) => {
-                draft.agents = [result.agent, ...draft.agents.filter((agent) => agent.id !== result.agent.id)];
+                draft.duplicatingAgentIds = [...draft.duplicatingAgentIds, agentId];
               });
-              acceptLayout(result.layout);
-              return { agentId: result.agent.id, layout: result.layout };
+              try {
+                const result = await runtime.duplicateAgent(agentId);
+                if (!isCurrent()) return null;
+                setState((draft) => {
+                  draft.agents = [result.agent, ...draft.agents.filter((agent) => agent.id !== result.agent.id)];
+                });
+                acceptLayout(result.layout);
+                return { agentId: result.agent.id, layout: result.layout };
+              } finally {
+                if (isCurrent())
+                  setState((draft) => {
+                    draft.duplicatingAgentIds = draft.duplicatingAgentIds.filter((id) => id !== agentId);
+                  });
+              }
             },
             mutateLayout: async (action) => {
+              if (!isCurrent()) return null;
               const layout = await mutate(action);
               if (!isCurrent()) return null;
               acceptLayout(layout);

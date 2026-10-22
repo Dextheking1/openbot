@@ -194,11 +194,27 @@ const AgentActions = createSimpleContext({
             agentIds: agentList()
               .filter((agent) => !hidden.has(agent.id))
               .map((agent) => agent.id),
+            // The agent's own Duplicate item waits too: the host refuses a second copy of one agent.
             duplicateAgent: async (agentId) => {
-              const result = await copyAgent(agentId);
-              return result && { agentId: result.agent.id, layout: result.layout };
+              if (!scopeIsCurrent()) return null;
+              setDuplicatingAgentIds((current) => new Set(current).add(agentId));
+              try {
+                const result = await copyAgent(agentId);
+                return result && { agentId: result.agent.id, layout: result.layout };
+              } finally {
+                setDuplicatingAgentIds((current) => {
+                  const next = new Set(current);
+                  next.delete(agentId);
+                  return next;
+                });
+              }
             },
-            mutateLayout: async (action) => (scopeIsCurrent() ? applySidebarLayoutAction(action) : null),
+            // A server switch during the call ends the chain: the next call would reach the other server.
+            mutateLayout: async (action) => {
+              if (!scopeIsCurrent()) return null;
+              const layout = await applySidebarLayoutAction(action);
+              return scopeIsCurrent() ? layout : null;
+            },
           },
           sectionId,
         );
