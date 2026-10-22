@@ -19,12 +19,16 @@ export interface SectionDuplicateDeps {
   mutateLayout: (action: SidebarLayoutAction) => Promise<SidebarLayoutSnapshot | null>;
 }
 
-/** "Name copy", then "Name copy 2" and so on, unique without regard to case and within the name limit. */
+/**
+ * "Name copy", then "Name copy 2" and so on, unique without regard to case and within the name limit.
+ * A copy of "Name copy" is "Name copy 2", not "Name copy copy", as the host names agent copies.
+ */
 export function duplicateSectionName(sourceName: string, existingNames: Iterable<string>): string {
   const taken = new Set([...existingNames].map((name) => name.toLocaleLowerCase()));
+  const sourceBase = /^(.*?)(?: copy(?: \d+)?)$/iu.exec(sourceName)?.[1]?.trim() || sourceName.trim();
   for (let index = 1; ; index += 1) {
     const suffix = index === 1 ? " copy" : ` copy ${index}`;
-    const base = sourceName.slice(0, Math.max(1, INPUT_LIMITS.sidebarSectionName - suffix.length)).trimEnd();
+    const base = sourceBase.slice(0, Math.max(1, INPUT_LIMITS.sidebarSectionName - suffix.length)).trimEnd();
     const candidate = `${base}${suffix}`;
     if (!taken.has(candidate.toLocaleLowerCase())) return candidate;
   }

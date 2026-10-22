@@ -188,6 +188,15 @@ try {
     return { partialSectionId: partial.id, kept: 1, secondCopy: second.sectionId };
   });
 
+  await step("duplicate a copy: the name counts up instead of adding another copy", async () => {
+    const newId = await duplicateSection(deps(sidebar.getSnapshot()), first.sectionId);
+    assert.ok(newId);
+    const layout = sidebar.getSnapshot();
+    assert.equal(layout.sections.find((section) => section.id === newId)?.name, "Break it Up! copy 4");
+    assert.equal(layout.order.indexOf(newId), layout.order.indexOf(first.sectionId) + 1);
+    return { sectionId: newId, agents: sectionAgentNames(layout, newId) };
+  });
+
   report.passed = true;
 } finally {
   await runCauseEffect(agents.stop()).catch(() => undefined);
