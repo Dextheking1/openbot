@@ -192,8 +192,8 @@ export class OpenBotDatabase {
     return this.#conversations.readActiveTurnId(agentId, threadId);
   }
 
-  readRunningTurnIds(threadId: string | null): string[] {
-    return this.#conversations.readRunningTurnIds(threadId);
+  readRunningTurnIds(): Map<string, string[]> {
+    return this.#conversations.readRunningTurnIds();
   }
 
   readConversationRevision(agentId: string, threadId: string | null): number {

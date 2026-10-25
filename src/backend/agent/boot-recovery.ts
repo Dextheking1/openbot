@@ -282,14 +282,13 @@ export class BootRecovery {
 
   recoverPersistedTurns(): void {
     for (const { delivery } of this.#mailbox.unresolvedDeliveries()) this.#orphanedDeliveryIds.add(delivery.id);
+    const runningTurns = this.#store.database.readRunningTurnIds();
     for (const agent of this.threads()) {
       if (!agent.threadId) continue;
       const turnId = this.#store.database.readConversationRuntime(agent.id, agent.threadId).activeTurnId;
       // A running turn that is not the thread's active turn has no writer left, and no turn of
       // this process runs yet, so the recovery write below closes it too (#2214).
-      const staleTurns = this.#store.database
-        .readRunningTurnIds(agent.threadId)
-        .filter((candidate) => candidate !== turnId);
+      const staleTurns = (runningTurns.get(agent.threadId) ?? []).filter((candidate) => candidate !== turnId);
       const changedMessages = this.#store.database
         .readConversationRecoveryMessages(agent.id, agent.threadId, turnId)
         .flatMap((message) => {
